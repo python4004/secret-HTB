@@ -32,36 +32,85 @@ i noticed that port `3000` is opened for `Node.js` okey lets explore port `80` .
 
 So i downloaded the source code,now lets dig in it the code so i will stop enum website and explore code first.
 
-i found 4 files in node folder 
+in this period my brain focus on way to find `RCE`. 
 
-`auth.js` 
+i found 4 important files in `node` folder on of them 
+
+`private.js` 
 
 ```
-const router = require('express').Router();
-const User = require('../model/user');
-const bcrypt = require('bcryptjs')
-const jwt = require('jsonwebtoken')
-const { registerValidation, loginValidation} = require('../validations')
+router.get('/priv', verifytoken, (req, res) => {
+   // res.send(req.user)
 
-router.post('/register', async (req, res) => {
+    const userinfo = { name: req.user }
 
-    // validation
-    const { error } = registerValidation(req.body)
-    if (error) return res.status(400).send(error.details[0].message);
+    const name = userinfo.name.name;
+    
+    if (name == 'theadmin'){
+        res.json({
+            creds:{
+                role:"admin", 
+                username:"theadmin",
+                desc : "welcome back admin,"
+            }
+        })
+    }
+    else{
+        res.json({
+            role: {
+                role: "you are normal user",
+                desc: userinfo.name.name
+            }
+        })
+    }
+})
 
-    // check if user exists
-    const emailExist = await User.findOne({email:req.body.email})
-    if (emailExist) return res.status(400).send('Email already Exist')
 
-    // check if user name exist 
-    const unameexist = await User.findOne({ name: req.body.name })
-    if (unameexist) return res.status(400).send('Name already Exist')
+router.get('/logs', verifytoken, (req, res) => {
+    const file = req.query.file;
+    const userinfo = { name: req.user }
+    const name = userinfo.name.name;
+    
+    if (name == 'theadmin'){
+        const getLogs = `git log --oneline ${file}`;
+        exec(getLogs, (err , output) =>{
+            if(err){
+                res.status(500).send(err);
+                return
+            }
+            res.json(output);
+        })
+    }
+    else{
+        res.json({
+            role: {
+                role: "you are normal user",
+                desc: userinfo.name.name
+            }
+        })
+    }
+})
 
-    //hash the password
-    const salt = await bcrypt.genSalt(10);
-    const hashPaswrod = await bcrypt.hash(req.body.password, salt)
+```
 
+## lets explain our code 
 
+#### 1- route to `/priv` we found that he only check on the name that  `name `==`theadmin`. 
+
+#### 2- route `/log/` ``` exec(getLogs, (err , output) ``` here we got `RCE` he took `${file}`  and executed.
+
+so that line was mistake that developer made 
+
+now lets make our exploit but first we need to be `authenticated` and `authorized`. 
+
+#### To be authenticated:
+
+we need to create an account and get jwt token .
+lets send `post` request to `register` 
+
+what we need to create an account ????
+
+```
     //create a user 
     const user = new User({
         name: req.body.name,
@@ -69,56 +118,43 @@ router.post('/register', async (req, res) => {
         password:hashPaswrod
     });
 
-    try{
-        const saveduser = await user.save();
-        res.send({ user: user.name})
-    
-    }
-    catch(err){
-        console.log(err)
-    }
+```
+so we need to post (name&email&password) in `json` format 
 
-});
+![999](https://user-images.githubusercontent.com/36403473/156898976-4fb2249b-202e-410c-b082-695e872e6b39.png)
 
 
-// login 
+ 
+lets go to login page 
 
-router.post('/login', async  (req , res) => {
+i got jwt token 
 
-    const { error } = loginValidation(req.body)
-    if (error) return res.status(400).send(error.details[0].message);
-
-    // check if email is okay 
-    const user = await User.findOne({ email: req.body.email })
-    if (!user) return res.status(400).send('Email is wrong');
-
-    // check password 
-    const validPass = await bcrypt.compare(req.body.password, user.password)
-    if (!validPass) return res.status(400).send('Password is wrong');
-
-
-    // create jwt 
-    const token = jwt.sign({ _id: user.id, name: user.name , email: user.email}, process.env.TOKEN_SECRET )
-    res.header('auth-token', token).send(token);
-
-})
-
-router.use(function (req, res, next) {
-    res.json({
-        message: {
-
-            message: "404 page not found",
-            desc: "page you are looking for is not found. "
-        }
-    })
-});
-
-module.exports = router
+```
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MjIzYjg5YTI3YzdlYzA0NTliMTkzNTEiLCJuYW1lIjoicHl0aG9uNDA0IiwiZW1haWwiOiJweXRob240MDRAem90ZS5jb20iLCJpYXQiOjE2NDY1MTIxMjV9.CgDdDke1S_4LcMxvGrcPSXphngv3Dtp20ovNTP8Rcx8
 
 ```
 
-### lets explain our code 
+
+now i am authenticated 
+
+![net](https://user-images.githubusercontent.com/36403473/156899116-5355330f-73fb-44ed-b205-264aa84b2b6c.png)
 
 
+next step to be authorized :
 
+so may mind go on changing the name in `jwt token` to `the admin` but i need to find `secret token` 
+
+this secret token i found it in `git logs ` folders by using `git log -p` command 
+
+![net2](https://user-images.githubusercontent.com/36403473/156900090-3aa990fc-7bd1-46e3-8a1e-0b9c2467a610.png)
+
+ 
+![nnn](https://user-images.githubusercontent.com/36403473/156901422-7191c472-cdc3-4fd5-ac36-15832ee06b0b.png)
+
+now let's try to access `/api/logs` that cant any non authorized user to access by `theadmin` user jwt token add with our revese shell 
+
+![mmic](https://user-images.githubusercontent.com/36403473/156901616-0bbf3409-dbda-4d71-84c6-e52863ff7bc2.png)
+
+
+![nr](https://user-images.githubusercontent.com/36403473/156901731-961653f6-dbff-47ff-a3ab-6e38e4af3b15.png)
 
