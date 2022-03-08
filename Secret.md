@@ -1,6 +1,9 @@
 # Hack The Box - Secret
 
+<img width="237" alt="sec" src="https://user-images.githubusercontent.com/36403473/157329286-b8064943-e270-4533-83f5-91a89ee16492.png">
+
 ## This is my Writeup and walkthrough for Secret machine  from Hack The Box.
+
 
 #### 1-Nmap
 
@@ -24,7 +27,7 @@ PORT     STATE SERVICE VERSION
 
 ```
 
-## `User acess` 
+## `User access` 
 
 i noticed that port `3000` is opened for `Node.js` okey lets explore port `80` .
 
@@ -34,7 +37,7 @@ So i downloaded the source code,now lets dig in it the code so i will stop enum 
 
 in this period my brain focus on way to find `RCE`. 
 
-i found 4 important files in `node` folder on of them 
+i found 4 important files in `node` folder one of them 
 
 `private.js` 
 
@@ -93,20 +96,21 @@ router.get('/logs', verifytoken, (req, res) => {
 
 ```
 
-## lets explain our code 
+## let's explain our code
 
-#### 1- route to `/priv` we found that he only check on the name that  `name `==`theadmin`. 
+#### 1- route to `/priv` we found that code only check on the name parameter that  `name ==theadmin`. 
 
-#### 2- route `/log/` ``` exec(getLogs, (err , output) ``` here we got `RCE` he took `${file}`  and executed.
+#### 2- route `/log/` ``` exec(getLogs, (err , output) ``` here we got `RCE`  that took `${file}`  and executed.
 
-so that line was mistake that developer made 
+so that line was the mistake mistake that  the developer made 
 
-now lets make our exploit but first we need to be `authenticated` and `authorized`. 
+now lets make our exploit but first we need to be `Authenticated` and `Authorized`. 
 
-#### To be authenticated:
+#### STEPS  To be `authenticated`:
 
-we need to create an account and get jwt token .
-lets send `post` request to `register` 
+we need to create an account and get `jwt` token .
+
+so lets send `POST` request to `register` 
 
 what we need to create an account ????
 
@@ -140,7 +144,7 @@ now i am authenticated
 ![net](https://user-images.githubusercontent.com/36403473/156899116-5355330f-73fb-44ed-b205-264aa84b2b6c.png)
 
 
-next step to be authorized :
+#### STEPS to be `authorized` :
 
 so may mind go on changing the name in `jwt token` to `the admin` but i need to find `secret token` 
 
@@ -151,7 +155,7 @@ this secret token i found it in `git logs ` folders by using `git log -p` comman
  
 ![nnn](https://user-images.githubusercontent.com/36403473/156901422-7191c472-cdc3-4fd5-ac36-15832ee06b0b.png)
 
-now let's try to access `/api/logs` that cant any non authorized user to access by `theadmin` user jwt token add with our revese shell 
+now let's try to access `/api/logs` that can't any non authorized user to access by `theadmin` user jwt token add with our revese shell 
 
 ![mmic](https://user-images.githubusercontent.com/36403473/156901616-0bbf3409-dbda-4d71-84c6-e52863ff7bc2.png)
 
