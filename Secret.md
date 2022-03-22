@@ -4,6 +4,15 @@
 
 ## This is my Writeup and walkthrough for Secret machine  from Hack The Box.
 
+### Brief of attacks :
+
+1- Source code review (nodejs)
+
+2- JWT token
+
+3- GIT LOGS
+
+4- COREDUMP  
 
 #### 1-Nmap
 
@@ -29,11 +38,11 @@ PORT     STATE SERVICE VERSION
 
 ## `User access` 
 
-i noticed that port `3000` is opened for `Node.js` okey lets explore port `80` .
+i noticed that port `3000` is opened for `Node.js` okey let's explore port `80` .
 
 ![1](https://user-images.githubusercontent.com/36403473/156873493-9e112bdf-2483-43bd-bf1e-22e44ca3b428.png)
 
-So i downloaded the source code,now lets dig in it the code so i will stop enum website and explore code first.
+So i downloaded the source code,now let's dig in it the code so i will stop enum website and explore code first.
 
 in this period my brain focus on way to find `RCE`. 
 
@@ -104,13 +113,13 @@ router.get('/logs', verifytoken, (req, res) => {
 
 so that line was the mistake mistake that  the developer made 
 
-now lets make our exploit but first we need to be `Authenticated` and `Authorized`. 
+now let's make our exploit but first we need to be `Authenticated` and `Authorized`. 
 
 #### STEPS  To be `authenticated`:
 
 we need to create an account and get `jwt` token .
 
-so lets send `POST` request to `register` 
+so let's send `POST` request to `register` 
 
 what we need to create an account ????
 
@@ -129,9 +138,7 @@ so we need to post (name&email&password) in `json` format
 
 
  
-lets go to login page 
-
-i got jwt token 
+let's go to login page to `sign in` and finally got `jwt` token 
 
 ```
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MjIzYjg5YTI3YzdlYzA0NTliMTkzNTEiLCJuYW1lIjoicHl0aG9uNDA0IiwiZW1haWwiOiJweXRob240MDRAem90ZS5jb20iLCJpYXQiOjE2NDY1MTIxMjV9.CgDdDke1S_4LcMxvGrcPSXphngv3Dtp20ovNTP8Rcx8
@@ -139,14 +146,14 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MjIzYjg5YTI3YzdlYzA0NTliMTkzNTE
 ```
 
 
-now i am authenticated 
+Now I am authenticated 
 
 ![net](https://user-images.githubusercontent.com/36403473/156899116-5355330f-73fb-44ed-b205-264aa84b2b6c.png)
 
 
 #### STEPS to be `authorized` :
 
-so may mind go on changing the name in `jwt token` to `the admin` but i need to find `secret token` 
+so my mind go on changing the name in `jwt token` to `the admin` but i need to find `secret token` first.
 
 this secret token i found it in `git logs ` folders by using `git log -p` command 
 
@@ -155,7 +162,7 @@ this secret token i found it in `git logs ` folders by using `git log -p` comman
  
 ![nnn](https://user-images.githubusercontent.com/36403473/156901422-7191c472-cdc3-4fd5-ac36-15832ee06b0b.png)
 
-now let's try to access `/api/logs` that can't any non authorized user to access by `theadmin` user jwt token add with our revese shell 
+let's try to access `/api/logs` that can't any non authorized user to access by `theadmin` user jwt token add with our revese shell 
 
 ![mmic](https://user-images.githubusercontent.com/36403473/156901616-0bbf3409-dbda-4d71-84c6-e52863ff7bc2.png)
 
@@ -165,15 +172,15 @@ now let's try to access `/api/logs` that can't any non authorized user to access
 ### `ROOT ACCESS`
 
 
-now we have an intial access lets start now chapter.
+now we have an intial access let's start chapter.
 
 before of all i usually  i check sudo writes by `sudo -l` but now thing is interest ,one of my enumeration our many pentester to use script like `linpeas` to enum server but let make it last try.
 
 
-after some time i found a binary file in `/opt/` directory with `root` ownership
+after some time i found a binary file in `/opt/` directory with `root` rights with `c `code file 
 
 
-### lets check this code 
+### let's check this code 
 ```
 #include <stdio.h>
 #include <stdlib.h>
@@ -324,11 +331,13 @@ int main()
 After analysing:
 
 this code take an file and give us information about 
+
 ``` 
 Total characters  
 Total words       
 Total lines       
 ```
+there is an interesting line :
 `    // Enable coredump generation
     prctl(PR_SET_DUMPABLE, 1);
 `
@@ -339,28 +348,32 @@ A core dump file was found in this directory. The content of core dump files are
 
  for more details check wiki [coredump](https://en.wikipedia.org/wiki/Core_dump)
 
-for more details about `coredump` attack this juicy report (exploit)[https://alephsecurity.com/2021/10/20/sudump/]
+for more details about `coredump` attack this juicy report [exploit][https://alephsecurity.com/2021/10/20/sudump/]
 
 #### what we can do and how exploit occur ???? 
-okay to generate `core dump` file we need program to be crashed but how!!
+ To generate `core dump` file we need program to be crashed but how!!
 
-an easy way we need to use linux signals : (if you dont linux signals check this bro [linux signals](https://www.educative.io/edpresso/what-are-linux-signals)
+an easy way we need to use `linux signals` : (if you dont linux signals check this bro [linux signals](https://www.educative.io/edpresso/what-are-linux-signals)
 
 we will open another tab and use` kill -SIGKILL PID` command to kill process of `count` program.
 
-lets find the ID of process by `ps -aux` command 
+let's find the ID of process by `ps -aux` command 
 
 ![1](https://user-images.githubusercontent.com/36403473/159387921-2326f877-c914-471f-bd1f-85e6ab1b4820.png)
 
 before killing process i will make program read `/root/root.txt` and crash.
 
 ![2](https://user-images.githubusercontent.com/36403473/159388713-569c4290-adaf-49a6-868b-2f1a04531171.png)
-now lets see what is happen in `core dump` file 
+
+now let's see what is happened in `core dump` file 
+
 ![3](https://user-images.githubusercontent.com/36403473/159388718-b842aa8d-d9d0-4e61-aae2-901cb571d9e3.png)
 
-use `strings` command to make it simple 
+using `strings` command to make file simple
 
 ![4](https://user-images.githubusercontent.com/36403473/159388719-4308994d-bd7a-4273-bfdf-dd2d27ab4ba6.png)
+
+I wish you to be happy to read my report 
 
 ........................................................................<!FINALLY_PWN!>......................................................................................................
 
