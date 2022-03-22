@@ -339,6 +339,8 @@ A core dump file was found in this directory. The content of core dump files are
 
  for more details check wiki [coredump](https://en.wikipedia.org/wiki/Core_dump)
 
+for more details about `coredump` attack this juicy report (exploit)[https://alephsecurity.com/2021/10/20/sudump/]
+
 #### what we can do and how exploit occur ???? 
 okay to generate `core dump` file we need program to be crashed but how!!
 
@@ -360,6 +362,6 @@ use `strings` command to make it simple
 
 ![4](https://user-images.githubusercontent.com/36403473/159388719-4308994d-bd7a-4273-bfdf-dd2d27ab4ba6.png)
 
-..............................................................<!FINALLY_PWN!>...........................................................................
+........................................................................<!FINALLY_PWN!>......................................................................................................
 
 
