@@ -340,4 +340,26 @@ A core dump file was found in this directory. The content of core dump files are
  for more details check wiki [coredump](https://en.wikipedia.org/wiki/Core_dump)
 
 #### what we can do and how exploit occur ???? 
-https://alephsecurity.com/2021/10/20/sudump/
+okay to generate `core dump` file we need program to be crashed but how!!
+
+an easy way we need to use linux signals : (if you dont linux signals check this bro [linux signals](https://www.educative.io/edpresso/what-are-linux-signals)
+
+we will open another tab and use` kill -SIGKILL PID` command to kill process of `count` program.
+
+lets find the ID of process by `ps -aux` command 
+
+![1](https://user-images.githubusercontent.com/36403473/159387921-2326f877-c914-471f-bd1f-85e6ab1b4820.png)
+
+before killing process i will make program read `/root/root.txt` and crash.
+
+![2](https://user-images.githubusercontent.com/36403473/159388713-569c4290-adaf-49a6-868b-2f1a04531171.png)
+now lets see what is happen in `core dump` file 
+![3](https://user-images.githubusercontent.com/36403473/159388718-b842aa8d-d9d0-4e61-aae2-901cb571d9e3.png)
+
+use `strings` command to make it simple 
+
+![4](https://user-images.githubusercontent.com/36403473/159388719-4308994d-bd7a-4273-bfdf-dd2d27ab4ba6.png)
+
+..............................................................<!FINALLY_PWN!>...........................................................................
+
+
